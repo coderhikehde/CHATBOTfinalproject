@@ -2,45 +2,50 @@ package com.chatbot;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import java.nio.charset.StandardCharsets;
 
 public class GeminiService {
-    private final String API_KEY;
-    private final String URL;
+    private final String API_KEY = System.getenv("GROQ_API_KEY");
+    private final String URL = "https://api.groq.com/openai/v1/chat/completions";
     private final Gson gson = new Gson();
-
-    public GeminiService() {
-        String key = System.getenv("GEMINI_API_KEY");
-        if (key == null) key = "AIzaSyDGzXXGqUzCPZMMu5vzjGHF86X6D9akPRA";
-        this.API_KEY = key;
-        this.URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
-    }
 
     public String getResponse(String userPrompt) {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(URL);
-            post.setHeader("Content-Type", "application/json");
-            String safePrompt = userPrompt.replace("\"", "'").replace("\n", " ");
-            String jsonBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + safePrompt + "\" }] }] }";
-            post.setEntity(new StringEntity(jsonBody));
+            post.setHeader("Authorization", "Bearer " + API_KEY);
+            post.setHeader("Content-Type", "application/json; charset=utf-8");
+
+            JsonObject messageObj = new JsonObject();
+            messageObj.addProperty("role", "user");
+            messageObj.addProperty("content", userPrompt);
+
+            JsonArray messagesArray = new JsonArray();
+            messagesArray.add(messageObj);
+
+            JsonObject payload = new JsonObject();
+            payload.addProperty("model", "llama-3.3-70b-versatile");
+            payload.add("messages", messagesArray);
+
+            StringEntity entity = new StringEntity(gson.toJson(payload), StandardCharsets.UTF_8);
+            post.setEntity(entity);
+
             try (CloseableHttpResponse response = client.execute(post)) {
-                String rawJson = EntityUtils.toString(response.getEntity());
-                System.out.println("GEMINI_RAW_RESPONSE: " + rawJson);
+                String rawJson = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 JsonObject jobj = gson.fromJson(rawJson, JsonObject.class);
-                if (jobj.has("candidates")) {
-                    return jobj.getAsJsonArray("candidates")
+                if (jobj.has("choices")) {
+                    return jobj.getAsJsonArray("choices")
                                .get(0).getAsJsonObject()
-                               .getAsJsonObject("content")
-                               .getAsJsonArray("parts")
-                               .get(0).getAsJsonObject()
-                               .get("text").getAsString();
+                               .getAsJsonObject("message")
+                               .get("content").getAsString();
                 } else {
-                    return "API_LIMIT_OR_KEY_ERROR: Check terminal logs.";
+                    return "API_ERROR: Check logs.";
                 }
             }
         } catch (Exception e) {
