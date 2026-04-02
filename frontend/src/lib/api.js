@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8080/api";
+const API_BASE = "https://chatbotfinalproject-production.up.railway.app/api";
 
 export async function sendMessage(username, message) {
   try {
@@ -8,7 +8,6 @@ export async function sendMessage(username, message) {
       body: JSON.stringify({ username, message }),
     });
     const data = await res.json();
-    // CRITICAL: We look for the 'reply' key here
     return data.reply || "AI returned empty response";
   } catch (err) { return "Connection Error"; }
 }
