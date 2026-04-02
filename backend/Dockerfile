@@ -5,4 +5,4 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn package -DskipTests
 EXPOSE 8080
-CMD ["mvn", "exec:java", "-Dexec.mainClass=com.chatbot.Main"]
+CMD ["java", "-jar", "target/chatbot-backend-1.0-SNAPSHOT-jar-with-dependencies.jar"]
