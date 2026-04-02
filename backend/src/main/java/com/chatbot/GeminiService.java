@@ -10,30 +10,28 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 public class GeminiService {
-    // 1. Verify this key at https://aistudio.google.com/app/apikey
-    private final String API_KEY = "AIzaSyDGzXXGqUzCPZMMu5vzjGHF86X6D9akPRA";
-    private final String URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
+    private final String API_KEY;
+    private final String URL;
     private final Gson gson = new Gson();
+
+    public GeminiService() {
+        String key = System.getenv("GEMINI_API_KEY");
+        if (key == null) key = "AIzaSyDGzXXGqUzCPZMMu5vzjGHF86X6D9akPRA";
+        this.API_KEY = key;
+        this.URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
+    }
 
     public String getResponse(String userPrompt) {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(URL);
             post.setHeader("Content-Type", "application/json");
-
-            // Clean the prompt to prevent JSON breakages
             String safePrompt = userPrompt.replace("\"", "'").replace("\n", " ");
             String jsonBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + safePrompt + "\" }] }] }";
-            
             post.setEntity(new StringEntity(jsonBody));
-
             try (CloseableHttpResponse response = client.execute(post)) {
                 String rawJson = EntityUtils.toString(response.getEntity());
-                
-                // PRINT THIS TO YOUR TERMINAL TO SEE GOOGLE'S ACTUAL ERROR
                 System.out.println("GEMINI_RAW_RESPONSE: " + rawJson);
-
                 JsonObject jobj = gson.fromJson(rawJson, JsonObject.class);
-                
                 if (jobj.has("candidates")) {
                     return jobj.getAsJsonArray("candidates")
                                .get(0).getAsJsonObject()
@@ -46,7 +44,7 @@ public class GeminiService {
                 }
             }
         } catch (Exception e) {
-            return "NETWORK_ERROR: Check internet connection.";
+            return "NETWORK_ERROR: " + e.getMessage();
         }
     }
 }
