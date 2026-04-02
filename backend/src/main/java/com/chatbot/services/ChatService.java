@@ -1,62 +1,40 @@
 package com.chatbot.services;
 
-import com.chatbot.config.DatabaseConfig;
-import java.sql.*;
+import com.chatbot.config.ConfigLoader;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ChatService {
-    
-    public static void saveChat(UUID userId, String message, String response) throws Exception {
-        String sql = "INSERT INTO chats (user_id, message, response) VALUES (?, ?, ?)";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setObject(1, userId);
-            pstmt.setString(2, message);
-            pstmt.setString(3, response);
-            pstmt.executeUpdate();
-        }
-    }
-    
-    public static List<Map<String, String>> getUserChats(UUID userId) throws Exception {
-        List<Map<String, String>> chats = new ArrayList<>();
-        String sql = "SELECT message, response, created_at FROM chats WHERE user_id = ? ORDER BY created_at DESC LIMIT 50";
-        
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setObject(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-            
-            while (rs.next()) {
-                Map<String, String> chat = new HashMap<>();
-                chat.put("message", rs.getString("message"));
-                chat.put("response", rs.getString("response"));
-                chat.put("timestamp", rs.getString("created_at"));
-                chats.add(chat);
+
+    public static void saveChat(String userId, String message, String response) {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            String url = ConfigLoader.getSupabaseUrl() + "/rest/v1/chats";
+            HttpPost post = new HttpPost(url);
+            post.setHeader("apikey", ConfigLoader.getSupabaseAnonKey());
+            post.setHeader("Authorization", "Bearer " + ConfigLoader.getSupabaseAnonKey());
+            post.setHeader("Content-Type", "application/json");
+            post.setHeader("Prefer", "return=minimal");
+
+            JsonObject body = new JsonObject();
+            body.addProperty("message", message);
+            body.addProperty("response", response);
+
+            post.setEntity(new StringEntity(new Gson().toJson(body), StandardCharsets.UTF_8));
+
+            try (CloseableHttpResponse res = client.execute(post)) {
+                String raw = EntityUtils.toString(res.getEntity());
+                System.out.println("SUPABASE SAVE: " + res.getStatusLine().getStatusCode() + " " + raw);
             }
-        }
-        return chats;
-    }
-    
-    public static String getAIResponse(String message) {
-        // Simple rule-based responses (language agnostic)
-        String msg = message.toLowerCase();
-        
-        if (msg.contains("hello") || msg.contains("hi")) {
-            return "Hello! How can I help you today?";
-        } else if (msg.contains("how are you")) {
-            return "I'm doing great! Thanks for asking. How about you?";
-        } else if (msg.contains("name")) {
-            return "I'm your friendly AI chatbot assistant!";
-        } else if (msg.contains("help")) {
-            return "I can help you with questions, chat with you, or just keep you company! What would you like to know?";
-        } else if (msg.contains("thank")) {
-            return "You're welcome! Happy to help! 😊";
-        } else if (msg.contains("bye")) {
-            return "Goodbye! Have a wonderful day! 👋";
-        } else if (msg.contains("weather")) {
-            return "I can't check real weather yet, but I hope it's beautiful where you are! ☀️";
-        } else {
-            return "Interesting! Tell me more about that. I'm here to learn and chat with you! 🤖";
+        } catch (Exception e) {
+            System.err.println("Chat save error: " + e.getMessage());
         }
     }
 }
