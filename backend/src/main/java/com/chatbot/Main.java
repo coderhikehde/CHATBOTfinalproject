@@ -7,7 +7,9 @@ public class Main {
     private static final GeminiService gemini = new GeminiService();
 
     public static void main(String[] args) {
-        port(8080);
+        String portStr = System.getenv("PORT");
+        int port = (portStr != null) ? Integer.parseInt(portStr) : 8080;
+        port(port);
         before((req, res) -> {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
@@ -18,10 +20,9 @@ public class Main {
         post("/api/chat", (req, res) -> {
             ChatRequest cr = gson.fromJson(req.body(), ChatRequest.class);
             String ans = gemini.getResponse(cr.message);
-            // We force it to be a clean 'reply' key
             return "{\"status\":\"success\", \"reply\":\"" + ans.replace("\"", "'").replace("\n", " ") + "\"}";
         });
-        System.out.println(">>> FINAL SYNC LIVE ON 8080 <<<");
+        System.out.println(">>> FINAL SYNC LIVE ON " + port + " <<<");
     }
     static class ChatRequest { String message; }
 }
