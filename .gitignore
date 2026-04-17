@@ -1,2 +1,16 @@
 node_modules/
 target/
+
+# Environment / credentials — never commit these
+backend/.env
+frontend/.env
+
+# Frontend build output
+frontend/build/
+
+# MacOS
+.DS_Store
+
+# IDE
+.idea/
+*.iml

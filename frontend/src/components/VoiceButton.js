@@ -13,8 +13,10 @@ export default function VoiceButton({ onTranscript }) {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    // Use browser/OS language for true multilingual support
+    recognition.lang = navigator.language || "en-US";
     recognition.interimResults = false;
+    recognition.continuous = false;
 
     if (isListening) {
       recognition.stop();

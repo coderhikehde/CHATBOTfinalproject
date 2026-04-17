@@ -15,8 +15,8 @@ export default function DashboardView({ username }) {
   const stats = [
     { label: "Total Queries", value: data?.totalQueries ?? "—", icon: MessageSquare },
     { label: "Last Active", value: data?.lastActive ?? "—", icon: Clock },
-    { label: "Model", value: "Gemini 2.5", icon: Zap },
-    { label: "Status", value: "Online", icon: BarChart3 },
+    { label: "Model", value: data?.model ?? "LLaMA 3.3 70B", icon: Zap },
+    { label: "Status", value: data?.status ?? "Online", icon: BarChart3 },
   ];
 
   return (

@@ -21,17 +21,23 @@ const ChatView = ({ username }) => {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Build Groq-compatible history from displayed messages
+  const buildHistory = (msgs) =>
+    msgs.map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
+
   const handleSend = async (e) => {
     e?.preventDefault();
     if (!input.trim()) return;
 
     const userMsg = { text: input, sender: 'user' };
+    // Snapshot current messages for history before adding new user message
+    const history = buildHistory(messages);
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const aiReply = await sendMessage(username, input);
+      const aiReply = await sendMessage(username, input, history);
       setMessages(prev => [...prev, { text: aiReply, sender: 'bot' }]);
     } catch (err) {
       setMessages(prev => [...prev, { text: "Connection Error", sender: 'bot' }]);

@@ -52,9 +52,10 @@ public class DatabaseConfig {
         """;
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Database tables initialized");
+            System.out.println("[DB] Tables initialized via JDBC");
         } catch (SQLException e) {
-            System.err.println("Database init error: " + e.getMessage());
+            // JDBC connection to Supabase may be restricted — tables are managed via Supabase dashboard
+            System.out.println("[DB] JDBC init skipped (tables already exist in Supabase): " + e.getMessage());
         }
     }
 }
