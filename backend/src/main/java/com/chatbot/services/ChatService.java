@@ -82,6 +82,31 @@ public class ChatService {
         }
     }
 
+    public static String getChatHistory(String username) {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            // Get user UUID first
+            String userUUID = resolveUserUUID(client, username);
+            String url;
+            if (userUUID != null) {
+                url = ConfigLoader.getSupabaseUrl()
+                    + "/rest/v1/chats?select=message,response,created_at&user_id=eq."
+                    + userUUID + "&order=created_at.asc&limit=50";
+            } else {
+                url = ConfigLoader.getSupabaseUrl()
+                    + "/rest/v1/chats?select=message,response,created_at&order=created_at.asc&limit=50";
+            }
+            HttpGet get = new HttpGet(url);
+            get.setHeader("apikey", ConfigLoader.getSupabaseAnonKey());
+            get.setHeader("Authorization", "Bearer " + ConfigLoader.getSupabaseAnonKey());
+            try (CloseableHttpResponse res = client.execute(get)) {
+                return EntityUtils.toString(res.getEntity());
+            }
+        } catch (Exception e) {
+            System.err.println("getChatHistory error: " + e.getMessage());
+            return "[]";
+        }
+    }
+
     public static long getTotalQueries(String username) {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             String url = ConfigLoader.getSupabaseUrl() + "/rest/v1/chats?select=id&order=created_at.desc";

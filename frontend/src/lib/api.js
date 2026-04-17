@@ -40,6 +40,15 @@ export async function registerUser(username, password) {
   }
 }
 
+export async function getChatHistory(username) {
+  try {
+    const res = await fetch(`${API_BASE}/api/history?username=${encodeURIComponent(username)}`);
+    return await res.json();
+  } catch (err) {
+    return [];
+  }
+}
+
 export async function getDashboard(username) {
   try {
     const res = await fetch(`${API_BASE}/api/dashboard?username=${encodeURIComponent(username)}`);

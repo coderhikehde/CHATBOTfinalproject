@@ -93,6 +93,16 @@ public class Main {
             }
         });
 
+        get("/api/history", (req, res) -> {
+            try {
+                String username = req.queryParams("username");
+                return ChatService.getChatHistory(username);
+            } catch (Exception e) {
+                res.status(500);
+                return "{\"error\":\"" + e.getMessage() + "\"}";
+            }
+        });
+
         get("/api/dashboard", (req, res) -> {
             try {
                 String username = req.queryParams("username");
